@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Линия на Времето – История на България</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Uncial+Antiqua&family=IM+Fell+English:ital@0;1&display=swap');
+
+/* ── ROOT VARS ── */
+:root {
+  --parch:   #F4E8C1;
+  --parch2:  #E8D5A0;
+  --parch3:  #D4B870;
+  --ink:     #1A0F05;
+  --ink2:    #3D2310;
+  --gold:    #B8860B;
+  --gold2:   #D4AF37;
+  --gold3:   #F5D060;
+  --red:     #7A1515;
+  --red2:    #A02020;
+  --blue:    #1A3060;
+  --blue2:   #2A4880;
+  --green:   #1A4A20;
+  --green2:  #2A6A30;
+  --bg:      #0E0804;
+  --bg2:     #1C1208;
+  --correct: #1A5C1A;
+  --wrong:   #6A0A0A;
+  --border:  1px solid #8B6914;
+  --r:       6px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'IM Fell English', Georgia, serif;
+  background: var(--bg);
+  color: var(--parch);
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* parchment crumple bg */
+  background-image:
+    repeating-linear-gradient(0deg,   transparent, transparent 80px, #C9933A06 80px, #C9933A06 81px),
+    repeating-linear-gradient(90deg,  transparent, transparent 80px, #C9933A04 80px, #C9933A04 81px),
+    radial-gradient(ellipse at 10% 5%,  #8B340030 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 95%, #1A3A6820 0%, transparent 40%);
+}
+
+/* ═══ HEADER ═══ */
+header {
+  background: linear-gradient(180deg, #0A0503 0%, #180E06 60%, var(--bg) 100%);
+  border-bottom: 2px solid var(--gold);
+  padding: 16px 20px 12px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 6px 30px #00000080;
+}
+header::after {
+  content: '';
+  position: absolute; bottom:-4px; left:10%; right:10%; height:2px;
+  background: linear-gradient(90deg, transparent, var(--gold3), transparent);
+}
+.h-ornament { color:var(--gold); font-size:13px; letter-spacing:14px; opacity:.55; display:block; margin-bottom:4px; }
+h1 {
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: clamp(18px, 3.8vw, 36px);
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold3) 50%, var(--gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  text-shadow: none;
+}
+h1 small {
+  display:block; font-family:'IM Fell English', serif; font-style:italic;
+  font-size:.38em; letter-spacing:5px; color:var(--parch3);
+  -webkit-text-fill-color: var(--parch3); margin-top:3px; opacity:.8;
+}
+
+/* ═══ SCORE / MODE BAR ═══ */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  background: #140C05;
+  border-bottom: 1px solid #3D2310;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.score-pill {
+  font-family:'Cinzel',serif;
+  font-size:13px;
+  display:flex; align-items:center; gap:8px;
+}
+.score-pill span { color:var(--gold3); font-size:20px; font-weight:900; }
+.mode-btns { display:flex; gap:8px; flex-wrap:wrap; }
+.mode-btn {
+  font-family:'Cinzel',serif; font-size:10px; letter-spacing:1.5px;
+  padding:7px 14px; border:1px solid var(--gold); border-radius:4px;
+  background:transparent; color:var(--gold); cursor:pointer;
+  transition: background .15s, color .15s;
+}
+.mode-btn:hover, .mode-btn.active { background:var(--gold); color:var(--ink); }
+.btn-reset {
+  font-family:'Cinzel',serif; font-size:10px; letter-spacing:1.5px;
+  padding:7px 14px; border:1px solid #5A2020; border-radius:4px;
+  background:transparent; color:#C06060; cursor:pointer;
+  transition: background .15s, color .15s;
+}
+.btn-reset:hover { background:#5A2020; color:#F5A0A0; }
+
+/* ═══ INSTRUCTIONS ═══ */
+.instructions {
+  text-align:center;
+  padding:10px 20px 6px;
+  font-size:14px; font-style:italic;
+  color:var(--parch3);
+  opacity:.85;
+  min-height:30px;
+}
+
+/* ═══ MAIN AREA ═══ */
+.game-area {
+  padding: 10px 16px 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ═══════════════════════════
+   MODE 1: DRAG TO TIMELINE
+═══════════════════════════ */
+#mode-drag { }
+
+/* Cards bank */
+.cards-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px 0 18px;
+  min-height: 100px;
+}
+.event-card {
+  background: linear-gradient(145deg, #2A1C0A, #1A1005);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  padding: 9px 14px;
+  cursor: grab;
+  user-select: none;
+  max-width: 210px;
+  min-width: 130px;
+  text-align:center;
+  transition: transform .15s, box-shadow .15s;
+  position:relative;
+  overflow:hidden;
+}
+.event-card::before {
+  content:'';
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at top, #C9933A12, transparent 70%);
+  pointer-events:none;
+}
+.event-card:hover { transform:translateY(-3px) scale(1.03); box-shadow:0 8px 24px #00000080, 0 0 12px #C9933A40; }
+.event-card.dragging { opacity:.4; transform:rotate(-2deg) scale(.95); }
+.event-card .ev-icon { font-size:22px; display:block; margin-bottom:4px; }
+.event-card .ev-text { font-size:13px; line-height:1.35; color:var(--parch); }
+
+/* Timeline rail */
+.timeline-wrap {
+  position: relative;
+  padding: 20px 0 30px;
+  overflow-x: auto;
+}
+.timeline-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  position: relative;
+  min-width: max-content;
+  margin: 0 auto;
+  padding: 0 30px;
+}
+/* The horizontal line */
+.timeline-rail::before {
+  content:'';
+  position:absolute;
+  top:52px; left:0; right:0; height:3px;
+  background:linear-gradient(90deg, transparent, var(--gold), var(--gold), transparent);
+  z-index:0;
+}
+
+.tl-slot {
+  display:flex; flex-direction:column; align-items:center;
+  width:160px; min-width:160px;
+  position:relative;
+  z-index:1;
+}
+.tl-dot {
+  width:16px; height:16px; border-radius:50%;
+  background:radial-gradient(circle, var(--gold3), var(--gold));
+  border:2px solid var(--parch3);
+  margin:44px 0 6px;
+  box-shadow:0 0 10px #C9933A80;
+  flex-shrink:0;
+}
+.tl-year {
+  font-family:'Cinzel',serif; font-size:12px; font-weight:600;
+  color:var(--gold3); letter-spacing:1px;
+  margin-bottom:8px;
+  text-align:center;
+}
+.tl-drop {
+  width:148px; min-height:90px;
+  border:2px dashed #5A3A10;
+  border-radius:8px;
+  background:#1A1005;
+  display:flex; align-items:center; justify-content:center;
+  text-align:center;
+  font-size:11px; font-style:italic; color:#4A3010;
+  padding:6px;
+  transition:background .2s, border-color .2s;
+  position:relative;
+}
+.tl-drop.drag-over {
+  background:#2A1E08;
+  border-color:var(--gold);
+  border-style:solid;
+  box-shadow:0 0 16px #C9933A50;
+}
+.tl-drop.filled-correct {
+  background:linear-gradient(145deg,#0D2A0D,#081508);
+  border:2px solid #4caf50;
+  box-shadow:0 0 14px #4caf5050;
+}
+.tl-drop.filled-wrong {
+  background:linear-gradient(145deg,#2A0808,#150303);
+  border:2px solid #f44336;
+  animation:shake .35s ease;
+}
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.tl-drop .placed-card {
+  font-size:12px; line-height:1.4; color:var(--parch);
+  text-align:center; padding:4px;
+  pointer-events:none;
+}
+.tl-drop .placed-icon { font-size:20px; display:block; margin-bottom:4px; }
+
+/* Ruler label above slot */
+.tl-ruler {
+  font-family:'Cinzel',serif; font-size:10px; letter-spacing:1px;
+  color:var(--parch3); opacity:.7;
+  text-align:center; height:36px; display:flex; align-items:center;
+  justify-content:center; padding:0 4px;
+}
+
+/* ═══════════════════════════
+   MODE 2: MATCH YEAR → EVENT
+═══════════════════════════ */
+#mode-match { display:none; }
+
+.match-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:22px;
+  padding:14px 0;
+}
+.match-col-title {
+  font-family:'Cinzel',serif; font-size:11px; letter-spacing:3px;
+  color:var(--gold); text-transform:uppercase; text-align:center;
+  margin-bottom:10px; opacity:.8;
+}
+.match-items { display:flex; flex-direction:column; gap:8px; }
+
+.match-year {
+  background:linear-gradient(135deg, #2A1A04, #1A1005);
+  border:1px solid var(--gold);
+  border-radius:6px; padding:10px 14px;
+  font-family:'Cinzel',serif; font-size:15px; font-weight:600;
+  color:var(--gold3); text-align:center;
+  cursor:pointer; transition:background .15s, box-shadow .15s;
+  position:relative;
+}
+.match-year:hover { background:#2A1E08; box-shadow:0 0 12px #C9933A50; }
+.match-year.selected { background:#3A2810; border-color:var(--gold3); box-shadow:0 0 18px #C9933A80; }
+.match-year.matched-ok  { background:linear-gradient(135deg,#0D2A0D,#081A08); border-color:#4caf50; color:#A5D6A7; }
+.match-year.matched-bad { background:linear-gradient(135deg,#2A0808,#150303); border-color:#f44336; color:#EF9A9A; animation:shake .35s ease; }
+
+.match-event {
+  background:linear-gradient(135deg, #100D08, #0A0805);
+  border:1px solid #3A2810;
+  border-radius:6px; padding:10px 14px;
+  font-size:13px; color:var(--parch2); line-height:1.4;
+  cursor:pointer; transition:background .15s, border-color .15s;
+}
+.match-event:hover { background:#1A1408; border-color:var(--parch3); }
+.match-event.selected { background:#1E1A08; border-color:var(--gold3); }
+.match-event.matched-ok  { background:linear-gradient(135deg,#0D2A0D,#081A08); border-color:#4caf50; }
+.match-event.matched-bad { background:linear-gradient(135deg,#2A0808,#150303); border-color:#f44336; animation:shake .35s ease; }
+
+/* ═══════════════════════════
+   MODE 3: QUIZ – WHO IS WHO
+═══════════════════════════ */
+#mode-quiz { display:none; }
+
+.quiz-card {
+  max-width:640px; margin:20px auto;
+  background:linear-gradient(160deg,#1E1409,#0D0804);
+  border:1px solid var(--gold);
+  border-radius:10px;
+  padding:28px 30px;
+  position:relative; overflow:hidden;
+}
+.quiz-card::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.qz-progress {
+  font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px;
+  color:var(--gold); text-align:right; margin-bottom:12px; opacity:.7;
+}
+.qz-q {
+  font-size:19px; line-height:1.55; color:var(--parch);
+  margin-bottom:20px; text-align:center;
+}
+.qz-q em { color:var(--gold3); font-style:normal; font-family:'Cinzel',serif; }
+.qz-opts {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+}
+.qz-opt {
+  padding:12px 16px;
+  background:#1A1208;
+  border:1px solid #3A2810;
+  border-radius:6px;
+  color:var(--parch2); font-family:'IM Fell English',serif; font-size:14px;
+  cursor:pointer; text-align:left; line-height:1.35;
+  transition:background .15s, border-color .15s;
+}
+.qz-opt:hover:not(:disabled) { background:#251C0A; border-color:var(--gold); color:var(--parch); }
+.qz-opt.correct { background:#0D2A0D; border-color:#4caf50; color:#A5D6A7; }
+.qz-opt.wrong   { background:#2A0808; border-color:#f44336; color:#EF9A9A; }
+.qz-opt:disabled { cursor:default; }
+.qz-feedback {
+  margin-top:16px; padding:12px 16px;
+  border-radius:6px; font-size:14px; line-height:1.5;
+  display:none; font-style:italic;
+}
+.qz-feedback.show { display:block; }
+.qz-feedback.ok { background:#0D2A0D; border:1px solid #4caf50; color:#A5D6A7; }
+.qz-feedback.nok { background:#2A0808; border:1px solid #f44336; color:#EF9A9A; }
+.qz-next {
+  display:block; width:100%; margin-top:14px;
+  padding:12px; background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none; border-radius:6px; color:var(--ink);
+  font-family:'Cinzel',serif; font-size:12px; font-weight:700; letter-spacing:2px;
+  cursor:pointer; transition:opacity .2s;
+}
+.qz-next:hover { opacity:.85; }
+
+/* ═══════════════════════════
+   RESULTS OVERLAY
+═══════════════════════════ */
+.overlay {
+  position:fixed; inset:0;
+  background:#000000A0; backdrop-filter:blur(4px);
+  z-index:900;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .3s;
+}
+.overlay.show { opacity:1; pointer-events:all; }
+.result-box {
+  background:linear-gradient(160deg,#201408,#0D0804);
+  border:2px solid var(--gold);
+  border-radius:14px; padding:36px 44px;
+  text-align:center; min-width:320px;
+  box-shadow:0 20px 70px #000000C0;
+  transform:scale(.7); transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+  position:relative; overflow:hidden;
+}
+.overlay.show .result-box { transform:scale(1); }
+.result-box::before {
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold3),transparent);
+}
+.rb-icon { font-size:60px; margin-bottom:10px; display:block; }
+.rb-title { font-family:'Cinzel',serif; font-size:26px; font-weight:900; margin-bottom:8px; color:var(--gold3); }
+.rb-score { font-family:'Cinzel',serif; font-size:44px; font-weight:900; color:var(--gold); text-shadow:0 0 20px #C9933A80; }
+.rb-max   { font-size:15px; color:var(--parch3); margin-top:4px; }
+.rb-msg   { font-size:16px; font-style:italic; color:var(--parch2); margin:14px 0; }
+.rb-btn {
+  padding:12px 32px; background:linear-gradient(135deg,var(--gold),var(--gold3));
+  border:none; border-radius:6px; color:var(--ink);
+  font-family:'Cinzel',serif; font-size:12px; font-weight:700; letter-spacing:2px;
+  cursor:pointer; transition:opacity .2s;
+}
+.rb-btn:hover { opacity:.85; }
+
+/* Confetti */
+.cp { position:fixed; pointer-events:none; z-index:9999; border-radius:2px; animation:cf 2.4s ease-in forwards; }
+@keyframes cf { from{transform:translateY(-20px) rotate(0);opacity:1} to{transform:translateY(105vh) rotate(900deg);opacity:0} }
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:#3D2310;border-radius:3px}
+
+@media(max-width:700px){
+  .match-grid{grid-template-columns:1fr}
+  .qz-opts{grid-template-columns:1fr}
+  .tl-slot{width:130px;min-width:130px}
+  .tl-drop{width:118px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="h-ornament">✦ ✦ ✦</span>
+  <h1>ЛИНИЯ НА ВРЕМЕТО<small>История на България · Владетели и Събития</small></h1>
+</header>
+
+<div class="top-bar">
+  <div class="score-pill">Точки: <span id="total-score">0</span></div>
+  <div class="mode-btns">
+    <button class="mode-btn active" id="btn-mode-drag" onclick="switchMode('drag')">🗓 Нареди събитията</button>
+    <button class="mode-btn"        id="btn-mode-match" onclick="switchMode('match')">🔗 Свържи годината</button>
+    <button class="mode-btn"        id="btn-mode-quiz"  onclick="switchMode('quiz')">📜 Кой е владетелят?</button>
+  </div>
+  <button class="btn-reset" onclick="resetAll()">↺ НОВ МЕЧ</button>
+</div>
+
+<div class="instructions" id="instr-text">Провлачете картата с събитието към правилния слот на линията на времето.</div>
+
+<div class="game-area">
+
+  <!-- ══ MODE 1: DRAG ══ -->
+  <div id="mode-drag">
+    <div class="cards-bank" id="cards-bank"></div>
+    <div class="timeline-wrap">
+      <div class="timeline-rail" id="timeline-rail"></div>
+    </div>
+    <div style="text-align:center;margin-top:10px;">
+      <button class="mode-btn" onclick="checkDrag()" style="padding:10px 28px;font-size:12px;">✔ ПРОВЕРИ ОТГОВОРИТЕ</button>
+    </div>
+  </div>
+
+  <!-- ══ MODE 2: MATCH ══ -->
+  <div id="mode-match">
+    <div class="match-grid">
+      <div>
+        <div class="match-col-title">📅 Годините</div>
+        <div class="match-items" id="match-years"></div>
+      </div>
+      <div>
+        <div class="match-col-title">📜 Събитията</div>
+        <div class="match-items" id="match-events"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODE 3: QUIZ ══ -->
+  <div id="mode-quiz">
+    <div class="quiz-card" id="quiz-card">
+      <div class="qz-progress" id="qz-prog"></div>
+      <div class="qz-q" id="qz-q"></div>
+      <div class="qz-opts" id="qz-opts"></div>
+      <div class="qz-feedback" id="qz-fb"></div>
+      <button class="qz-next" id="qz-next" onclick="nextQuiz()" style="display:none">СЛЕДВАЩ ВЪПРОС →</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Result overlay -->
+<div class="overlay" id="overlay">
+  <div class="result-box">
+    <span class="rb-icon" id="rb-icon"></span>
+    <div class="rb-title">РЕЗУЛТАТ</div>
+    <div class="rb-score" id="rb-score"></div>
+    <div class="rb-max"   id="rb-max"></div>
+    <div class="rb-msg"   id="rb-msg"></div>
+    <button class="rb-btn" onclick="closeOverlay()">ИГРАЙ ОТНОВО</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   DATA  — всички години и събития от текста
+═══════════════════════════════════════════════════════ */
+const EVENTS = [
+  { year:635,  ruler:'Хан Кубрат',      icon:'👑', short:'Обединяване на племената – основана Стара Велика България', detail:'Хан Кубрат обединил племената и основал държавата Стара Велика България около 635 г.' },
+  { year:680,  ruler:'Хан Аспарух',     icon:'⚔',  short:'Разгром на Византийската армия в областта Онгъл', detail:'Под командването на Хан Аспарух българите разгромили Византийската войска и прекосили река Дунав на юг.' },
+  { year:681,  ruler:'Хан Аспарух',     icon:'📜', short:'Мирен договор с Византия – официално основана България', detail:'Мирният договор от 681 г. е официалното международно признание на Българската държава. Столица – Плиска.' },
+  { year:701,  ruler:'Хан Тервел',      icon:'🏛', short:'Хан Тервел помага на Юстиниан II – получава Загоре и титла Кесар', detail:'Хан Тервел помогнал на Юстиниан II да си върне престола. Получил областта Загоре и титлата Кесар – второ място след императора.' },
+  { year:718,  ruler:'Хан Тервел',      icon:'🌟', short:'„Спасител на Европа" – разгром на арабите край Константинопол', detail:'Хан Тервел разгромил арабската армия, обсаждала Константинопол цяла година. Византия е спасена от арабска инвазия.' },
+  { year:803,  ruler:'Хан Крум',        icon:'🗡', short:'Хан Крум заема престола и разширява България до Карпатите', detail:'Хан Крум завладял земите до Карпатите на северозапад, крепостта Сердика (днешна София) и долината на река Струма.' },
+  { year:811,  ruler:'Хан Крум',        icon:'🔥', short:'Победа при Върбишкия проход – гибелта на Никифор I', detail:'Хан Крум устроил засада при Върбишкия проход. Никифор I загинал в битката – незапомнено поражение на Византия.' },
+  { year:855,  ruler:'Кирил и Методий', icon:'🔤', short:'Създаване на Глаголицата – Българската азбука', detail:'Свети Кирил и Методий създали азбуката, наречена Глаголица, за да може народът да слави Бога на родния си език.' },
+  { year:864,  ruler:'Княз Борис I',    icon:'✝',  short:'Покръстване на България – Борис I приема името Михаил', detail:'Княз Борис I е покръстен от Византийски свещеници в Плиска. Приел титлата „Княз" и християнското име Михаил.' },
+  { year:870,  ruler:'Княз Борис I',    icon:'⛪', short:'Създадена е самостоятелна Българска православна църква', detail:'След преговори с Рим и Цариград, България получила правото на своя Църква, ръководена от Български духовници.' },
+  { year:886,  ruler:'Княз Борис I',    icon:'📚', short:'Борис I приема учениците на Кирил и Методий в България', detail:'Прогонени от Великоморавия, учениците намерили дом в България. Основани са Охридската и Преславската книжовни школи.' },
+];
+
+/* QUIZ QUESTIONS */
+const QUIZ_Q = [
+  {
+    q:'Кой владетел обединил племената и основал Стара Велика България около 635 г.?',
+    ans:0, opts:['Хан Кубрат','Хан Аспарух','Хан Тервел','Хан Крум'],
+    fb:'Хан Кубрат основал Стара Велика България около 635 г. и завещал на синовете си да пазят единството на народа.'
+  },
+  {
+    q:'Кой хан заселил областта Онгъл и сключил мирен договор с Византия (681 г.), с който България е официално призната?',
+    ans:1, opts:['Хан Кубрат','Хан Аспарух','Хан Тервел','Хан Крум'],
+    fb:'Хан Аспарух (681–701 г.) основал Първата Българска държава. Столицата е Плиска. Договорът от 681 г. дава международно признание на България.'
+  },
+  {
+    q:'Кой хан получил титлата Кесар от Юстиниан II и е наречен „Спасител на Европа"?',
+    ans:0, opts:['Хан Тервел','Хан Крум','Хан Аспарух','Хан Кубрат'],
+    fb:'Хан Тервел (701–721 г.) бил изключително умел дипломат. Спасил Константинопол от Арабите (718 г.) и получил титлата Кесар – второ място след Византийския император.'
+  },
+  {
+    q:'Кой хан наредил да бъде изсечен Мадарският конник като символ на военен триумф и мощта на България?',
+    ans:0, opts:['Хан Тервел','Хан Крум','Хан Аспарух','Хан Кубрат'],
+    fb:'Смята се, че Хан Тервел заповядал изсичането на Мадарския конник близо до град Шумен. Релефът е символ на неговия военен триумф.'
+  },
+  {
+    q:'Кой хан победил Византийския император Никифор I при Върбишкия проход през 811 г.?',
+    ans:0, opts:['Хан Крум','Хан Тервел','Хан Аспарух','Хан Кубрат'],
+    fb:'Хан Крум устроил засада при Върбишкия проход. Никифор I загинал в битката – той е единственият Византийски император, загинал в битка с Българи.'
+  },
+  {
+    q:'Кой владетел издал първите писани закони в България – общи за Българи и Славяни?',
+    ans:0, opts:['Хан Крум','Хан Тервел','Княз Борис I','Хан Аспарух'],
+    fb:'Крумовите закони защитавали обикновените хора, наказвали крадци, клеветници и насилници. Законите имали еднаква сила за всички хора в държавата.'
+  },
+  {
+    q:'Кой владетел приел Православното Християнство като държавна религия на България (864 г.) и взел името Михаил?',
+    ans:0, opts:['Княз Борис I','Хан Крум','Хан Тервел','Хан Кубрат'],
+    fb:'Княз Борис I бил покръстен от Византийски свещеници в Плиска (864 г.). Прозрял, че общата вяра ще сближи Българите и Славяните и ще укрепи авторитета на България в Европа.'
+  },
+  {
+    q:'Кой владетел договорил и основал самостоятелната Българска православна църква (870 г.)?',
+    ans:0, opts:['Княз Борис I','Свети Кирил','Климент Охридски','Хан Тервел'],
+    fb:'Княз Борис I водил сложни преговори с Рим и Цариград. Резултатът – самостоятелна Българска православна църква с Български духовници (870 г.).'
+  },
+  {
+    q:'В коя година Свети Кирил и Методий създали азбуката Глаголица?',
+    ans:2, opts:['864 г.','870 г.','855 г.','886 г.'],
+    fb:'Свети Кирил и Методий създали Глаголицата около 855 г. По-късно тя е преработена от Българските книжовници в Кирилица.'
+  },
+  {
+    q:'Кой е първият Български учител и писател, изпратен от Княз Борис I в Охрид?',
+    ans:0, opts:['Климент Охридски','Наум Преславски','Методий','Кирил'],
+    fb:'Климент Охридски е изпратен от Княз Борис I в Охрид. Той обучил много ученици да четат и пишат. Неговото име носи Софийският университет – най-старото висше училище в България.'
+  },
+  {
+    q:'Кой основал Преславската книжовна школа в столицата Плиска?',
+    ans:0, opts:['Наум Преславски','Климент Охридски','Свети Кирил','Свети Методий'],
+    fb:'Наум останал да работи в столицата Плиска и основал Преславската книжовна школа, а по-късно продължил делото на Климент Охридски в Охрид.'
+  },
+  {
+    q:'Какъв е заветът на Хан Кубрат към синовете му, показан чрез снопа пръчки?',
+    ans:1, opts:['Да завладеят Константинопол','Да останат заедно – единни са непобедими','Да приемат Византийската вяра','Да преселят народа на юг от Дунав'],
+    fb:'Хан Кубрат казал: „Ако се разделите, ще бъдете слаби. Но докато сте заедно, никой не ще може да ви победи." Снопът пръчки символизира силата на единството.'
+  },
+];
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let totalScore = 0;
+let currentMode = 'drag';
+
+// Drag state
+let dragSrc = null;
+let dragState = {}; // slotId -> eventYear
+
+// Match state
+let matchSelYear  = null;
+let matchSelEvent = null;
+let matchPairs    = {};
+let matchDone     = 0;
+
+// Quiz state
+let quizIdx   = 0;
+let quizScore = 0;
+let quizOrder = [];
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════ */
+function addScore(n){
+  totalScore += n;
+  if(totalScore < 0) totalScore = 0;
+  document.getElementById('total-score').textContent = totalScore;
+}
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+function confetti(){
+  const cols=['#D4AF37','#F5D060','#5B9AD4','#6CC24A','#ef5350','#fff','#C9933A'];
+  for(let i=0;i<80;i++){
+    const p=document.createElement('div'); p.className='cp';
+    p.style.cssText=`left:${Math.random()*100}vw;top:-12px;
+      width:${5+Math.random()*9}px;height:${5+Math.random()*9}px;
+      background:${cols[Math.floor(Math.random()*cols.length)]};
+      animation-delay:${Math.random()*1}s;animation-duration:${1.8+Math.random()*1.5}s`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),3600);
+  }
+}
+function showOverlay(score, max){
+  const pct = Math.round(score/max*100);
+  document.getElementById('rb-icon').textContent  = pct>=80?'🏆':pct>=50?'⚔':'📜';
+  document.getElementById('rb-score').textContent = score;
+  document.getElementById('rb-max').textContent   = `от ${max} точки`;
+  document.getElementById('rb-msg').textContent   = pct>=80?'Отлично! Истински историк!':pct>=50?'Добро начало! Учи напред!':'Повтори урока и опитай пак!';
+  document.getElementById('overlay').classList.add('show');
+  if(pct>=50) confetti();
+}
+function closeOverlay(){
+  document.getElementById('overlay').classList.remove('show');
+  switchMode(currentMode);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODE SWITCHING
+═══════════════════════════════════════════════════════ */
+function switchMode(m){
+  currentMode = m;
+  ['drag','match','quiz'].forEach(x=>{
+    document.getElementById(`mode-${x}`).style.display = x===m?'block':'none';
+    document.getElementById(`btn-mode-${x}`).classList.toggle('active', x===m);
+  });
+  const instrs = {
+    drag:  'Провлачете картата с събитието към правилния слот на линията на времето.',
+    match: 'Кликнете година вляво, после съответното събитие вдясно, за да ги свържете.',
+    quiz:  'Прочетете описанието и изберете правилния владетел или дата.'
+  };
+  document.getElementById('instr-text').textContent = instrs[m];
+  if(m==='drag')  initDrag();
+  if(m==='match') initMatch();
+  if(m==='quiz')  initQuiz();
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODE 1 – DRAG TO TIMELINE
+═══════════════════════════════════════════════════════ */
+function initDrag(){
+  dragState = {};
+  const bank = document.getElementById('cards-bank');
+  const rail = document.getElementById('timeline-rail');
+  bank.innerHTML = '';
+  rail.innerHTML = '';
+
+  // Shuffled cards
+  const shuffled = shuffle(EVENTS);
+  shuffled.forEach(ev => {
+    const c = document.createElement('div');
+    c.className = 'event-card';
+    c.draggable = true;
+    c.dataset.year = ev.year;
+    c.innerHTML = `<span class="ev-icon">${ev.icon}</span><span class="ev-text">${ev.short}</span>`;
+    c.addEventListener('dragstart', e=>{ dragSrc = ev.year; c.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+    c.addEventListener('dragend',   ()=>{ c.classList.remove('dragging'); dragSrc=null; });
+    // touch support
+    c.addEventListener('touchstart', touchStart, {passive:true});
+    c.addEventListener('touchmove',  touchMove,  {passive:false});
+    c.addEventListener('touchend',   touchEnd);
+    bank.appendChild(c);
+  });
+
+  // Slots (sorted by year)
+  const sorted = [...EVENTS].sort((a,b)=>a.year-b.year);
+  sorted.forEach(ev => {
+    const slot = document.createElement('div');
+    slot.className = 'tl-slot';
+    slot.innerHTML = `
+      <div class="tl-ruler">${ev.ruler}</div>
+      <div class="tl-dot"></div>
+      <div class="tl-year">${ev.year} г.</div>
+      <div class="tl-drop" id="drop-${ev.year}" data-year="${ev.year}">Провлачи тук...</div>
+    `;
+    rail.appendChild(slot);
+  });
+
+  // Drop events
+  document.querySelectorAll('.tl-drop').forEach(drop=>{
+    drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('drag-over'); });
+    drop.addEventListener('dragleave',()=>{ drop.classList.remove('drag-over'); });
+    drop.addEventListener('drop', e=>{ e.preventDefault(); drop.classList.remove('drag-over'); handleDrop(drop); });
+  });
+}
+
+function handleDrop(drop){
+  if(!dragSrc) return;
+  const slotYear = +drop.dataset.year;
+  const ev = EVENTS.find(x=>x.year===dragSrc);
+  if(!ev) return;
+
+  // Remove this card from wherever it was placed before
+  document.querySelectorAll('.tl-drop').forEach(d=>{
+    if(d !== drop && dragState[d.dataset.year] === dragSrc){
+      delete dragState[d.dataset.year];
+      d.innerHTML = 'Провлачи тук...';
+      d.classList.remove('filled-correct','filled-wrong');
+    }
+  });
+  // Also restore the card to bank if re-drop
+  if(dragState[slotYear] !== undefined){
+    returnCardToBank(dragState[slotYear]);
+  }
+
+  dragState[slotYear] = dragSrc;
+  drop.innerHTML = `<span class="placed-icon">${ev.icon}</span><span class="placed-card">${ev.short}</span>`;
+  drop.classList.add('filled-correct');
+
+  // Remove from bank
+  document.querySelectorAll('#cards-bank .event-card').forEach(c=>{
+    if(+c.dataset.year === dragSrc) c.remove();
+  });
+}
+
+function returnCardToBank(year){
+  const ev = EVENTS.find(x=>x.year===year);
+  if(!ev) return;
+  const bank = document.getElementById('cards-bank');
+  const c = document.createElement('div');
+  c.className = 'event-card'; c.draggable = true; c.dataset.year = year;
+  c.innerHTML = `<span class="ev-icon">${ev.icon}</span><span class="ev-text">${ev.short}</span>`;
+  c.addEventListener('dragstart', e=>{ dragSrc = year; c.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+  c.addEventListener('dragend',   ()=>{ c.classList.remove('dragging'); dragSrc=null; });
+  bank.appendChild(c);
+}
+
+function checkDrag(){
+  let correct=0, total=Object.keys(dragState).length;
+  document.querySelectorAll('.tl-drop').forEach(drop=>{
+    const slotYear = +drop.dataset.year;
+    const placed   = dragState[slotYear];
+    if(placed === undefined) return;
+    if(placed === slotYear){
+      drop.classList.add('filled-correct');
+      drop.classList.remove('filled-wrong');
+      correct++;
+    } else {
+      drop.classList.add('filled-wrong');
+      drop.classList.remove('filled-correct');
+    }
+  });
+  const pts = correct * 10;
+  addScore(pts);
+  if(total > 0) setTimeout(()=>showOverlay(pts, EVENTS.length*10), 600);
+}
+
+/* ── Touch drag ── */
+let touchEl = null, touchClone = null;
+function touchStart(e){
+  touchEl = e.currentTarget;
+  dragSrc = +touchEl.dataset.year;
+  touchClone = touchEl.cloneNode(true);
+  touchClone.style.cssText = `position:fixed;opacity:.8;pointer-events:none;z-index:9999;transform:scale(1.05);width:${touchEl.offsetWidth}px`;
+  document.body.appendChild(touchClone);
+}
+function touchMove(e){
+  e.preventDefault();
+  const t = e.touches[0];
+  if(touchClone){ touchClone.style.left=(t.clientX-touchEl.offsetWidth/2)+'px'; touchClone.style.top=(t.clientY-40)+'px'; }
+}
+function touchEnd(e){
+  if(touchClone){ touchClone.remove(); touchClone=null; }
+  const t = e.changedTouches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const drop = el?.closest('.tl-drop');
+  if(drop) handleDrop(drop);
+  dragSrc = null;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODE 2 – MATCH YEAR → EVENT
+═══════════════════════════════════════════════════════ */
+function initMatch(){
+  matchSelYear  = null;
+  matchSelEvent = null;
+  matchPairs    = {};
+  matchDone     = 0;
+
+  const yearsDiv  = document.getElementById('match-years');
+  const eventsDiv = document.getElementById('match-events');
+  yearsDiv.innerHTML = '';
+  eventsDiv.innerHTML = '';
+
+  const pool = shuffle(EVENTS).slice(0, 8); // 8 pairs
+  const years   = shuffle(pool.map(e=>e.year));
+  const evTexts = shuffle(pool.map(e=>({year:e.year, icon:e.icon, short:e.short})));
+
+  years.forEach(y=>{
+    const b = document.createElement('div');
+    b.className='match-year'; b.dataset.year=y; b.textContent=y+' г.';
+    b.onclick=()=>selectYear(y, b);
+    yearsDiv.appendChild(b);
+  });
+  evTexts.forEach(ev=>{
+    const b = document.createElement('div');
+    b.className='match-event'; b.dataset.year=ev.year;
+    b.innerHTML=`${ev.icon} ${ev.short}`;
+    b.onclick=()=>selectEvent(ev.year, b);
+    eventsDiv.appendChild(b);
+  });
+}
+
+function selectYear(y, btn){
+  if(matchPairs[y]) return;
+  document.querySelectorAll('.match-year').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  matchSelYear = y;
+  tryMatch();
+}
+function selectEvent(y, btn){
+  if(Object.values(matchPairs).includes(y)) return;
+  document.querySelectorAll('.match-event').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  matchSelEvent = y;
+  tryMatch();
+}
+function tryMatch(){
+  if(matchSelYear===null || matchSelEvent===null) return;
+  const yBtn = document.querySelector(`.match-year[data-year="${matchSelYear}"]`);
+  const eBtn = document.querySelector(`.match-event[data-year="${matchSelEvent}"]`);
+  const ok   = matchSelYear === matchSelEvent;
+
+  yBtn?.classList.remove('selected'); eBtn?.classList.remove('selected');
+
+  if(ok){
+    yBtn?.classList.add('matched-ok'); eBtn?.classList.add('matched-ok');
+    matchPairs[matchSelYear] = matchSelEvent;
+    addScore(15);
+    matchDone++;
+    const total = document.querySelectorAll('.match-year').length;
+    if(matchDone >= total) setTimeout(()=>showOverlay(matchDone*15, total*15), 500);
+  } else {
+    yBtn?.classList.add('matched-bad'); eBtn?.classList.add('matched-bad');
+    addScore(-5);
+    setTimeout(()=>{
+      yBtn?.classList.remove('matched-bad');
+      eBtn?.classList.remove('matched-bad');
+    }, 700);
+  }
+  matchSelYear  = null;
+  matchSelEvent = null;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODE 3 – QUIZ
+═══════════════════════════════════════════════════════ */
+function initQuiz(){
+  quizIdx   = 0;
+  quizScore = 0;
+  quizOrder = shuffle([...Array(QUIZ_Q.length).keys()]);
+  renderQuiz();
+}
+function renderQuiz(){
+  if(quizIdx >= quizOrder.length){
+    showOverlay(quizScore, quizOrder.length*20);
+    return;
+  }
+  const q = QUIZ_Q[quizOrder[quizIdx]];
+  document.getElementById('qz-prog').textContent  = `Въпрос ${quizIdx+1} / ${quizOrder.length}`;
+  document.getElementById('qz-q').innerHTML       = q.q;
+  document.getElementById('qz-fb').className      = 'qz-feedback';
+  document.getElementById('qz-fb').innerHTML      = '';
+  document.getElementById('qz-next').style.display= 'none';
+
+  const opts = document.getElementById('qz-opts');
+  opts.innerHTML = '';
+  const shuffled = shuffle(q.opts.map((o,i)=>({o,i})));
+  shuffled.forEach(({o,i})=>{
+    const b = document.createElement('button');
+    b.className='qz-opt'; b.textContent=o;
+    b.onclick=()=>answerQuiz(i===q.ans, b, opts, q);
+    opts.appendChild(b);
+  });
+}
+function answerQuiz(ok, btn, opts, q){
+  opts.querySelectorAll('.qz-opt').forEach(b=>{ b.disabled=true; });
+  btn.classList.add(ok?'correct':'wrong');
+  // highlight correct answer
+  opts.querySelectorAll('.qz-opt').forEach(b=>{
+    if(b.textContent === q.opts[q.ans]) b.classList.add('correct');
+  });
+  const fb = document.getElementById('qz-fb');
+  fb.innerHTML = (ok?'✅ ':'❌ ') + q.fb;
+  fb.className = 'qz-feedback show ' + (ok?'ok':'nok');
+  if(ok){ quizScore+=20; addScore(20); }
+  document.getElementById('qz-next').style.display = 'block';
+}
+function nextQuiz(){
+  quizIdx++;
+  renderQuiz();
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════════ */
+function resetAll(){
+  totalScore = 0;
+  document.getElementById('total-score').textContent = '0';
+  document.getElementById('overlay').classList.remove('show');
+  switchMode(currentMode);
+}
+
+/* ── INIT ── */
+switchMode('drag');
+</script>
+</body>
+</html>
